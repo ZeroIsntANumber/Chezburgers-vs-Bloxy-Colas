@@ -26,26 +26,27 @@ local BODY_COLOR = Color3.fromRGB(126, 104, 63)
 
 local debounce = {}
 
-local function findAccessoryAmong(children)
-	for _, child in ipairs(children) do
-		if child:IsA("Accessory") then
-			return child
+local function findAccessoryAmong(instances)
+	for _, instance in ipairs(instances) do
+		if instance:IsA("Accessory") then
+			return instance
 		end
 	end
 	return nil
 end
 
 local function findDisguiseAccessory()
-	-- Look directly under the part first, then fall back to the part's
-	-- parent, in case the accessory was placed alongside the part (e.g.
-	-- under a wrapping Model) rather than inside it.
-	local found = findAccessoryAmong(part:GetChildren())
+	-- Search everywhere under the part first (in case the accessory is
+	-- nested inside a subfolder), then fall back to searching under the
+	-- part's parent, in case the accessory was placed alongside the part
+	-- (e.g. under a wrapping Model) rather than inside it.
+	local found = findAccessoryAmong(part:GetDescendants())
 	if found then
 		return found
 	end
 
 	if part.Parent then
-		found = findAccessoryAmong(part.Parent:GetChildren())
+		found = findAccessoryAmong(part.Parent:GetDescendants())
 		if found then
 			return found
 		end
