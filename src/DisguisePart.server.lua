@@ -26,12 +26,31 @@ local BODY_COLOR = Color3.fromRGB(126, 104, 63)
 
 local debounce = {}
 
-local function findDisguiseAccessory()
-	for _, child in ipairs(part:GetChildren()) do
+local function findAccessoryAmong(children)
+	for _, child in ipairs(children) do
 		if child:IsA("Accessory") then
 			return child
 		end
 	end
+	return nil
+end
+
+local function findDisguiseAccessory()
+	-- Look directly under the part first, then fall back to the part's
+	-- parent, in case the accessory was placed alongside the part (e.g.
+	-- under a wrapping Model) rather than inside it.
+	local found = findAccessoryAmong(part:GetChildren())
+	if found then
+		return found
+	end
+
+	if part.Parent then
+		found = findAccessoryAmong(part.Parent:GetChildren())
+		if found then
+			return found
+		end
+	end
+
 	return nil
 end
 
@@ -88,6 +107,7 @@ local function equipAccessory(character, accessoryClone)
 	weld.Parent = handle
 
 	accessoryClone.Parent = character
+	print("[DisguisePart] Equipped '" .. accessoryClone.Name .. "' on '" .. character.Name .. "', welded to '" .. targetAttachment.Parent:GetFullName() .. "'.")
 end
 
 local function applyDisguise(character, humanoid)
@@ -141,6 +161,8 @@ local function applyDisguise(character, humanoid)
 	local accessoryTemplate = findDisguiseAccessory()
 	if accessoryTemplate then
 		equipAccessory(character, accessoryTemplate:Clone())
+	else
+		warn("[DisguisePart] No Accessory found as a child of '" .. part:GetFullName() .. "' or its parent. Make sure chezburgerBody is placed directly under one of those.")
 	end
 end
 
