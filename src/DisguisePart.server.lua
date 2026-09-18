@@ -36,23 +36,12 @@ local function findAccessoryAmong(instances)
 end
 
 local function findDisguiseAccessory()
-	-- Search everywhere under the part first (in case the accessory is
-	-- nested inside a subfolder), then fall back to searching under the
-	-- part's parent, in case the accessory was placed alongside the part
-	-- (e.g. under a wrapping Model) rather than inside it.
-	local found = findAccessoryAmong(part:GetDescendants())
-	if found then
-		return found
-	end
-
-	if part.Parent then
-		found = findAccessoryAmong(part.Parent:GetDescendants())
-		if found then
-			return found
-		end
-	end
-
-	return nil
+	-- Search everywhere under the part (covers the accessory sitting
+	-- directly inside it or nested in a subfolder). Deliberately scoped to
+	-- just this part's subtree -- searching wider (e.g. the whole Workspace)
+	-- would risk picking up another disguise part's accessory when more
+	-- than one of these is set up in the same place.
+	return findAccessoryAmong(part:GetDescendants())
 end
 
 local function findAttachmentByName(root, name)
@@ -163,7 +152,7 @@ local function applyDisguise(character, humanoid)
 	if accessoryTemplate then
 		equipAccessory(character, accessoryTemplate:Clone())
 	else
-		warn("[DisguisePart] No Accessory found as a child of '" .. part:GetFullName() .. "' or its parent. Make sure chezburgerBody is placed directly under one of those.")
+		warn("[DisguisePart] No Accessory found under '" .. part:GetFullName() .. "'. Make sure the disguise accessory is placed inside this part.")
 	end
 end
 
