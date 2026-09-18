@@ -152,7 +152,12 @@ local function applyDisguise(character, humanoid)
 	if accessoryTemplate then
 		equipAccessory(character, accessoryTemplate:Clone())
 	else
-		warn("[DisguisePart] No Accessory found under '" .. part:GetFullName() .. "'. Make sure the disguise accessory is placed inside this part.")
+		local seen = {}
+		for _, descendant in ipairs(part:GetDescendants()) do
+			table.insert(seen, descendant.Name .. " [" .. descendant.ClassName .. "]")
+		end
+		warn("[DisguisePart] No Accessory found under '" .. part:GetFullName() .. "'. Descendants actually seen at runtime: "
+			.. (next(seen) and table.concat(seen, ", ") or "(this part has no descendants at all)"))
 	end
 end
 
