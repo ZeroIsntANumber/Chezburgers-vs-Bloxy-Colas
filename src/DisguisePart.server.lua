@@ -35,6 +35,61 @@ local function findDisguiseAccessory()
 	return nil
 end
 
+local function findAttachmentByName(root, name)
+	for _, descendant in ipairs(root:GetDescendants()) do
+		if descendant:IsA("Attachment") and descendant.Name == name then
+			return descendant
+		end
+	end
+	return nil
+end
+
+local function findWaistAttachment(root)
+	for _, descendant in ipairs(root:GetDescendants()) do
+		if descendant:IsA("Attachment") and descendant.Name:find("Waist") then
+			return descendant
+		end
+	end
+	return nil
+end
+
+-- Welds the accessory's Handle directly to the matching attachment on the
+-- character, instead of relying on Humanoid:AddAccessory(). That built-in
+-- call requires the Handle's Attachment name to exactly match an attachment
+-- already on the character rig (e.g. "WaistCenterAttachment") -- if it's
+-- misnamed even slightly, AddAccessory silently parents the accessory
+-- without welding it, leaving it invisible wherever it was cloned from
+-- instead of on the player. This does the same positioning manually, with a
+-- name-mismatch fallback, so a typo on the Handle's attachment can't break it.
+local function equipAccessory(character, accessoryClone)
+	local handle = accessoryClone:FindFirstChild("Handle")
+	if not (handle and handle:IsA("BasePart")) then
+		warn("[DisguisePart] '" .. accessoryClone.Name .. "' has no Handle part; cannot equip it.")
+		return
+	end
+
+	local sourceAttachment = handle:FindFirstChildWhichIsA("Attachment")
+	if not sourceAttachment then
+		warn("[DisguisePart] '" .. accessoryClone.Name .. "'.Handle has no Attachment; cannot equip it.")
+		return
+	end
+
+	local targetAttachment = findAttachmentByName(character, sourceAttachment.Name) or findWaistAttachment(character)
+	if not targetAttachment then
+		warn("[DisguisePart] No matching attachment found on the character for '" .. sourceAttachment.Name .. "'.")
+		return
+	end
+
+	handle.CFrame = targetAttachment.WorldCFrame * sourceAttachment.CFrame:Inverse()
+
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = handle
+	weld.Part1 = targetAttachment.Parent
+	weld.Parent = handle
+
+	accessoryClone.Parent = character
+end
+
 local function applyDisguise(character, humanoid)
 	-- Remove all current accessories.
 	for _, item in ipairs(character:GetChildren()) do
@@ -85,7 +140,7 @@ local function applyDisguise(character, humanoid)
 	-- Equip the new disguise accessory, if one is set up under this part.
 	local accessoryTemplate = findDisguiseAccessory()
 	if accessoryTemplate then
-		humanoid:AddAccessory(accessoryTemplate:Clone())
+		equipAccessory(character, accessoryTemplate:Clone())
 	end
 end
 
